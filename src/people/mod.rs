@@ -1,7 +1,9 @@
 use std::time::Duration;
 
-use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
+use bevy::{
+    prelude::*,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+};
 use big_brain::prelude::*;
 
 pub mod actions;
@@ -239,63 +241,51 @@ fn get_people_thinker() -> ThinkerBuilder {
         .when(TimeToWork, go_work)
 }
 
-pub const PEOPLE_SHAPE: shapes::Rectangle = shapes::Rectangle {
-    extents: Vec2 { x: 3., y: 3. },
-    origin: RectangleOrigin::Center,
-};
+pub const PEOPLE_SHAPE: Circle = Circle::new(1.0);
+pub const PEOPLE_COLOR: Color = Color::rgb(0.5, 0.5, 0.5);
 
-pub fn add_person(
-    cmd: &mut Commands,
-    name: String,
-    gender: Gender,
-    home: Option<Entity>,
-    location: Vec3,
+fn move_into_new_house(
+    mut cmd: Commands,
+    house: Query<(Entity, &Transform), Added<HomeBuilding>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let mut person = cmd.spawn((
-        Person,
-        get_people_thinker(),
-        PersonBundle {
-            state: CurrentActivity::FreeTime,
-            name: Name::new(name),
-            age: Age(30),
-            gender,
-            hunger: Hunger {
-                amount: 0.,
-                rate: 0.02,
-            },
-            thirst: Thirst {
-                amount: 0.,
-                rate: 0.03,
-            },
-            cash: Cash {
-                amount: 100.,
-                rate: 0.1,
-            },
-            inventory: Inventory::new(),
-        },
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&PEOPLE_SHAPE),
-            transform: Transform::from_xyz(location.x, location.y, location.z),
-            ..default()
-        },
-        Fill::color(Color::CYAN),
-        Stroke::new(Color::BLACK, 1.0),
-    ));
-
-    if let Some(home_entity) = home {
-        person.insert(Home(home_entity));
-    }
-}
-
-fn move_into_new_house(mut cmd: Commands, house: Query<(Entity, &Transform), Added<HomeBuilding>>) {
     for (home, location) in house.iter() {
-        add_person(
-            &mut cmd,
-            String::from(get_random_name()),
-            Gender::Male,
-            Some(home),
-            location.translation,
-        )
+        cmd.spawn((
+            Person,
+            get_people_thinker(),
+            PersonBundle {
+                state: CurrentActivity::FreeTime,
+                name: Name::new(String::from(get_random_name())),
+                age: Age(30),
+                gender: Gender::Male,
+                hunger: Hunger {
+                    amount: 0.,
+                    rate: 0.02,
+                },
+                thirst: Thirst {
+                    amount: 0.,
+                    rate: 0.03,
+                },
+                cash: Cash {
+                    amount: 100.,
+                    rate: 0.1,
+                },
+                inventory: Inventory::new(),
+            },
+            MaterialMesh2dBundle {
+                mesh: Mesh2dHandle(meshes.add(PEOPLE_SHAPE)),
+                material: materials.add(PEOPLE_COLOR),
+                visibility: Visibility::Visible,
+                transform: Transform::from_xyz(
+                    location.translation.x,
+                    location.translation.y,
+                    location.translation.z,
+                ),
+                ..default()
+            },
+            Home(home),
+        ));
     }
 }
 

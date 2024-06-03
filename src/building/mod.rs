@@ -1,5 +1,7 @@
-use bevy::prelude::*;
-use bevy_prototype_lyon::prelude::*;
+use bevy::{
+    prelude::*,
+    sprite::{MaterialMesh2dBundle, Mesh2dHandle},
+};
 
 use crate::{
     item::components::ItemType,
@@ -57,15 +59,14 @@ fn announce_stock(stores: Query<Ref<Store>>) {
     }
 }
 
-pub const BUILDING_SHAPE: shapes::Rectangle = shapes::Rectangle {
-    extents: Vec2 { x: 10., y: 10. },
-    origin: shapes::RectangleOrigin::Center,
-};
+pub const BUILDING_COLOR: Color = Color::CYAN;
 
 pub fn leftclick_to_build(
     mut cmd: Commands,
     target: Res<MouseTarget>,
-    buttons: Res<Input<MouseButton>>,
+    buttons: Res<ButtonInput<MouseButton>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     // if buttons.just_pressed(MouseButton::Left) {
     //     // Left button was pressed
@@ -80,15 +81,14 @@ pub fn leftclick_to_build(
                 amount: 3,
                 role: Role::ShopKeeper,
             },
-            ShapeBundle {
-                path: GeometryBuilder::build_as(&BUILDING_SHAPE),
+            Home,
+            MaterialMesh2dBundle {
+                mesh: Mesh2dHandle(meshes.add(Rectangle::new(10.0, 10.0))),
+                material: materials.add(BUILDING_COLOR),
+                visibility: Visibility::Visible,
                 transform: Transform::from_xyz(target.0.x, target.0.y, 0.),
                 ..default()
-            },
-            Fill::color(Color::CYAN),
-            Stroke::new(Color::BLACK, 5.0),
-            Home,
-            // Name::new("the Residence"),
+            }, // Name::new("the Residence"),
         ));
     }
     // if buttons.pressed(MouseButton::Right) {

@@ -1,9 +1,9 @@
 use std::time::Duration;
 
+use bevy::sprite::{MaterialMesh2dBundle, Mesh2dHandle};
 use bevy::window::PrimaryWindow;
 use bevy::{prelude::*, DefaultPlugins};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_prototype_lyon::prelude::*;
 use big_brain::BigBrainPlugin;
 use building::store::{Store, StoreBundle};
 use item::components::ItemType;
@@ -19,7 +19,6 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .init_resource::<MouseTarget>()
-        .add_plugins(ShapePlugin)
         .add_plugins(BigBrainPlugin::new(PreUpdate))
         .add_systems(PreUpdate, cursor_system)
         .add_systems(Startup, startup_app)
@@ -45,13 +44,12 @@ fn main() {
 // Make people work for cash
 // People who are satisfied and not in need of cash can have free time
 
-fn startup_app(mut cmd: Commands) {
+fn startup_app(
+    mut cmd: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
     cmd.spawn((Camera2dBundle::default(), MainCamera));
-
-    let building_shape = shapes::Rectangle {
-        extents: Vec2 { x: 10., y: 10. },
-        ..shapes::Rectangle::default()
-    };
 
     let mut store = Store {
         stock: Default::default(),
@@ -69,13 +67,13 @@ fn startup_app(mut cmd: Commands) {
         building::Building {
             entrance: Transform::from_xyz(30., 30., 0.),
         },
-        ShapeBundle {
-            path: GeometryBuilder::build_as(&building_shape),
+        MaterialMesh2dBundle {
+            mesh: Mesh2dHandle(meshes.add(Rectangle::new(10.0, 10.0))),
+            material: materials.add(Color::rgb(0.5, 0.5, 0.5)),
             transform: Transform::from_xyz(30., 30., 0.),
+            visibility: Visibility::Visible,
             ..default()
         },
-        Fill::color(Color::CYAN),
-        Stroke::new(Color::BLACK, 5.0),
         StoreBundle {
             name: Name::new("the Supermarket"),
             store: store,
@@ -88,33 +86,33 @@ fn startup_app(mut cmd: Commands) {
 #[allow(dead_code)]
 pub fn camera(
     time: Res<Time>,
-    keyboard_input: Res<Input<KeyCode>>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
     mut query: Query<(&mut Transform, &mut OrthographicProjection), With<Camera>>,
 ) {
     for (mut transform, mut ortho) in query.iter_mut() {
         let mut direction = Vec3::ZERO;
 
-        if keyboard_input.pressed(KeyCode::W) {
+        if keyboard_input.pressed(KeyCode::KeyW) {
             direction.y += 1.
         }
 
-        if keyboard_input.pressed(KeyCode::S) {
+        if keyboard_input.pressed(KeyCode::KeyS) {
             direction.y -= 1.
         }
 
-        if keyboard_input.pressed(KeyCode::D) {
+        if keyboard_input.pressed(KeyCode::KeyD) {
             direction.x += 1.
         }
 
-        if keyboard_input.pressed(KeyCode::A) {
+        if keyboard_input.pressed(KeyCode::KeyA) {
             direction.x -= 1.
         }
 
-        if keyboard_input.pressed(KeyCode::Z) {
+        if keyboard_input.pressed(KeyCode::KeyZ) {
             ortho.scale += 0.1;
         }
 
-        if keyboard_input.pressed(KeyCode::X) {
+        if keyboard_input.pressed(KeyCode::KeyX) {
             ortho.scale -= 0.1;
         }
 
